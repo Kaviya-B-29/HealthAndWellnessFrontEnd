@@ -52,6 +52,5 @@ HealthAppFrontEnd/
 ├── package.json
 └── vite.config.js
 
-yaml
-Copy code
+
 
