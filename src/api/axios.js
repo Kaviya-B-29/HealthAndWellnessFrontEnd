@@ -1,12 +1,12 @@
 import axios from "axios";
 
-// Use the environment variable or fallback to localhost (for local dev)
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
+  baseURL: process.env.REACT_APP_API_URL ,
   headers: {
     "Content-Type": "application/json",
   },
 });
+console.log("Axios base URL:", process.env.REACT_APP_API_URL);
 
 // Automatically attach token if present
 api.interceptors.request.use((config) => {
