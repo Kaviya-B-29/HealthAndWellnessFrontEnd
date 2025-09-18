@@ -1,37 +1,98 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
+import loginImg from "../assets/login1.png";
 
-export default function Login(){
+export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const nav = useNavigate();
 
   const submit = async (e) => {
     e.preventDefault();
     setError("");
-    try{
+    try {
       await login(email, password);
       nav("/dashboard");
-    }catch(err){
+    } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="bg-white shadow rounded-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Login</h2>
-        {error && <div className="text-red-500 mb-2">{error}</div>}
-        <form onSubmit={submit} className="space-y-3">
-          <input className="w-full border p-2 rounded" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
-          <input type="password" className="w-full border p-2 rounded" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <button className="w-full bg-green-600 text-white py-2 rounded">Login</button>
-        </form>
-        <p className="mt-4 text-sm">Don't have account? <Link className="text-green-600" to="/register">Register</Link></p>
+    <section className="bg-gradient-to-bl from-violet-800 to-violet-300 min-h-screen flex items-center justify-center">
+      {/* Card */}
+      <div className="flex flex-col lg:flex-row w-9/10 md:w-4/5 lg:w-2/3 min-h-[600px] bg-white rounded-3xl shadow-2xl overflow-hidden">
+        {/* Left: Image */}
+        <div className="lg:w-1/2 h-96 lg:h-auto">
+          <img
+            src={loginImg}
+            alt="Login Illustration"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Right: Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-10">
+          <div className="w-full max-w-md">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              Login
+            </h2>
+
+            {error && (
+              <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={submit} className="space-y-5">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition"
+                required
+              />
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition pr-16"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+
+              <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500 text-white py-3 rounded-xl shadow-lg transition-all duration-300 font-semibold">
+                Login
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-gray-500 text-sm">
+              Don't have an account?{" "}
+              <Link
+                className="text-purple-600 font-medium hover:underline"
+                to="/register"
+              >
+                Register
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

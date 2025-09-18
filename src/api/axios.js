@@ -6,7 +6,6 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
-console.log("Axios base URL:", process.env.REACT_APP_API_URL);
 
 // Automatically attach token if present
 api.interceptors.request.use((config) => {
