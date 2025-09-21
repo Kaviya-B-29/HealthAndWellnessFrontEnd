@@ -17,9 +17,9 @@ export default function Goals() {
   const fetchGoals = async () => {
     try {
       const res = await API.get("/goals");
-      setGoals(res.data);
+      setGoals(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch goals:", err);
     }
   };
 
@@ -35,12 +35,17 @@ export default function Goals() {
       !formData.category ||
       (!formData.targetCalories && !formData.targetWorkoutMinutes)
     ) {
-      alert("Fill in all fields (at least one target).");
+      alert("Please fill in all fields (at least one target).");
       return;
     }
 
     try {
-      await API.post("/goals", formData);
+      await API.post("/goals", {
+        type: formData.type,
+        category: formData.category,
+        targetCalories: Number(formData.targetCalories) || 0,
+        targetWorkoutMinutes: Number(formData.targetWorkoutMinutes) || 0,
+      });
       setFormData({
         type: "",
         category: "",
@@ -49,7 +54,7 @@ export default function Goals() {
       });
       fetchGoals();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to add goal:", err);
     }
   };
 
@@ -63,13 +68,13 @@ export default function Goals() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">My Goals</h2>
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <h2 className="text-2xl font-bold">My Goals</h2>
 
       {/* Add Goal Form */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow rounded-xl p-4 mb-6 space-y-3"
+        className="bg-white shadow rounded-xl p-4 space-y-3"
       >
         <select
           name="type"
@@ -127,11 +132,11 @@ export default function Goals() {
         {goals.length === 0 ? (
           <p className="text-gray-500">No goals yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {goals.map((goal, i) => (
+          <ul className="space-y-3">
+            {goals.map((goal) => (
               <li
                 key={goal._id}
-                className="flex justify-between items-center border-b py-2"
+                className="p-3 border rounded-lg flex justify-between items-start"
               >
                 <div>
                   <p className="font-medium">
@@ -147,8 +152,17 @@ export default function Goals() {
                       Target Workouts: {goal.targetWorkoutMinutes} mins
                     </p>
                   )}
+
+                  {goal.progress && (
+                    <div className="mt-1 text-xs text-gray-500 space-y-1">
+                      <p>Calories Burned: {goal.progress.totalWorkoutCalories}</p>
+                      <p>Calories Consumed: {goal.progress.totalFoodCalories}</p>
+                      <p>Workout Minutes: {goal.progress.totalWorkoutMinutes}</p>
+                    </div>
+                  )}
+
                   <p
-                    className={`text-xs font-bold ${
+                    className={`mt-1 text-xs font-bold ${
                       goal.completed ? "text-green-600" : "text-red-600"
                     }`}
                   >

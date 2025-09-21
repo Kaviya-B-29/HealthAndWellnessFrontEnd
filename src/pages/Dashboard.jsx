@@ -177,7 +177,7 @@ export default function Dashboard() {
           onClick={() => navigate("/history")}
           className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition"
         >
-          Track Entire Wellness
+          Wellness History
         </button>
       </div>
 
