@@ -32,7 +32,7 @@ export default function Register() {
           <img
             src={registerImg}
             alt="Register Illustration"
-            className="w-full h-full object-cover"
+            className="w-full h-full bg-no-repeat bg-contain object-cover"
           />
         </div>
 
