@@ -1,43 +1,56 @@
 import API from "../api/axios";
 
-// Helper to check if a log belongs to a timeline
+/// src/services/progressService.js
 function inTimeline(dateStr, timeline) {
-  const now = new Date();
   const date = new Date(dateStr);
+  const now = new Date();
 
   if (timeline === "Daily") {
-    return date.toDateString() === now.toDateString();
+    // Compare only YYYY-MM-DD, ignore time zone differences
+    const d1 = date.toISOString().split("T")[0];
+    const d2 = now.toISOString().split("T")[0];
+    return d1 === d2;
   }
+
   if (timeline === "Weekly") {
     const weekAgo = new Date();
-    weekAgo.setDate(now.getDate() - 7);
+    weekAgo.setDate(now.getDate() - 6);
     return date >= weekAgo && date <= now;
   }
+
   if (timeline === "Monthly") {
-    return (
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear()
-    );
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }
+
   return false;
 }
 
-// Main function to aggregate progress
 export async function getProgress(timeline) {
-  const [workoutsRes, foodsRes] = await Promise.all([
-    API.get("/workouts"),
-    API.get("/foods"),
-  ]);
+  try {
+    const [workoutsRes, foodsRes] = await Promise.all([API.get("/workouts"), API.get("/foods")]);
+    const workouts = workoutsRes.data;
+    const foods = foodsRes.data;
 
-  const workouts = workoutsRes.data;
-  const foods = foodsRes.data;
+    let burned = 0;
+    let minutes = 0;
+    let consumed = 0;
 
-  const filteredWorkouts = workouts.filter((w) => inTimeline(w.date, timeline));
-  const filteredFoods = foods.filter((f) => inTimeline(f.date, timeline));
+    workouts.forEach((w) => {
+      if (inTimeline(w.date, timeline)) {
+        burned += w.caloriesBurned ?? w.calories ?? 0;
+        minutes += w.minutes ?? w.duration ?? 0;
+      }
+    });
 
-  return {
-    burned: filteredWorkouts.reduce((sum, w) => sum + (w.caloriesBurned || 0), 0),
-    minutes: filteredWorkouts.reduce((sum, w) => sum + (w.minutes || 0), 0),
-    consumed: filteredFoods.reduce((sum, f) => sum + (f.caloriesConsumed || 0), 0),
-  };
+    foods.forEach((f) => {
+      if (inTimeline(f.date, timeline)) {
+        consumed += f.caloriesConsumed ?? f.calories ?? 0;
+      }
+    });
+
+    return { burned, minutes, consumed };
+  } catch (err) {
+    console.error("Error fetching progress:", err);
+    return { burned: 0, minutes: 0, consumed: 0 };
+  }
 }

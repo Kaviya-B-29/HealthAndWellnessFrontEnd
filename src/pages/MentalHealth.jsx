@@ -69,6 +69,10 @@ export default function MentalHealth() {
   };
 
   return (
+    <div
+  className="min-h-screen bg-cover bg-center"
+  style={{ backgroundImage: "url('./src/assets/bg.png')" }}
+>
     <div className="max-w-3xl mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">Mental Health</h1>
 
@@ -134,6 +138,6 @@ export default function MentalHealth() {
           <div className="text-sm text-gray-500">No entries yet.</div>
         )}
       </div>
-    </div>
+    </div></div>
   );
 }

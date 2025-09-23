@@ -6,11 +6,11 @@ export const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
 
   // Load token from localStorage and fetch user data
   useEffect(() => {
     const init = async () => {
-      const token = localStorage.getItem("token");
       if (token) {
         try {
           const res = await API.get("/auth/me"); // interceptor adds token
@@ -19,17 +19,19 @@ export function AuthProvider({ children }) {
           console.error("Auth check failed:", err?.response?.data || err.message);
           localStorage.removeItem("token");
           setUser(null);
+          setToken(null);
         }
       }
       setLoading(false);
     };
     init();
-  }, []);
+  }, [token]);
 
   const register = async (name, email, password) => {
     const res = await API.post("/auth/register", { name, email, password });
     if (res.data?.token) {
       localStorage.setItem("token", res.data.token);
+      setToken(res.data.token);
       setUser(res.data.user);
     }
     return res.data;
@@ -39,6 +41,7 @@ export function AuthProvider({ children }) {
     const res = await API.post("/auth/login", { email, password });
     if (res.data?.token) {
       localStorage.setItem("token", res.data.token);
+      setToken(res.data.token);
       setUser(res.data.user);
     }
     return res.data;
@@ -47,10 +50,21 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,   
+        token,    
+        loading,
+        register,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

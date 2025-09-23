@@ -1,287 +1,108 @@
-import React, { useEffect, useMemo, useState } from "react";
-import API from "../api/axios";
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import registerImg from "../assets/register.png"; 
 
-/**
- * Workouts page
- * - datalist for type (user can type new type)
- * - distance optional
- * - calories auto-estimate (MET-based) when not manually overridden
- * - manual override: if user edits calories input, auto-updates stop
- * - sends numeric `calories` field to backend (canonical)
- * - robust validation and console logs for debugging
- */
+export default function Register() {
+  const { register } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const nav = useNavigate();
 
-const WORKOUT_OPTIONS = [
-  "Running",
-  "Cycling",
-  "Walking",
-  "Strength Training",
-  "Yoga",
-  "HIIT",
-  "Swimming",
-  "Dancing",
-];
-
-const initialForm = () => ({
-  type: "",
-  duration: "", // minutes
-  distance: "", // km optional
-  calories: "", // numeric string (auto or manual)
-  intensity: "Medium",
-  date: new Date().toISOString().slice(0, 10),
-});
-
-export default function Workouts() {
-  const [workouts, setWorkouts] = useState([]);
-  const [form, setForm] = useState(initialForm());
-  const [manualCalories, setManualCalories] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [banner, setBanner] = useState(null);
-
-  // fetch list
-  useEffect(() => {
-    fetchWorkouts();
-  }, []);
-
-  const fetchWorkouts = async () => {
-    try {
-      const res = await API.get("/workouts");
-      setWorkouts(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("fetchWorkouts:", err);
-      setBanner({ type: "err", msg: "Failed to load workouts." });
-    }
-  };
-
-  // simple MET estimator
-  const estimateCalories = (type, duration, intensity) => {
-    const MET = {
-      Running: 10,
-      Cycling: 8,
-      Walking: 4,
-      "Strength Training": 6,
-      Yoga: 3,
-      HIIT: 12,
-      Swimming: 9,
-      Dancing: 7,
-    };
-    const intensityFactor = intensity === "Low" ? 0.85 : intensity === "High" ? 1.15 : 1;
-    const met = MET[type] || 5;
-    // simplified formula (no body weight): calories ≈ MET * minutes * factor
-    return Math.max(0, Math.round(met * (+duration || 0) * intensityFactor));
-  };
-
-  // auto-fill calories when type/duration/intensity change — only when user hasn't manually edited calories
-  useEffect(() => {
-    if (!manualCalories && form.type && form.duration) {
-      const est = estimateCalories(form.type, form.duration, form.intensity);
-      setForm((f) => ({ ...f, calories: est ? String(est) : "" }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.type, form.duration, form.intensity, manualCalories]);
-
-  // validation
-  const valid = useMemo(() => {
-    if (!form.type) return false;
-    if (!form.duration || isNaN(+form.duration) || +form.duration <= 0) return false;
-    if (form.calories && (isNaN(+form.calories) || +form.calories < 0)) return false;
-    // calories should either be filled manually or auto-populated
-    if (!form.calories) return false;
-    return true;
-  }, [form]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    // track manual edits for calories
-    if (name === "calories") {
-      // if user clears, we allow auto-fill again
-      const isManual = value.trim() !== "";
-      setManualCalories(isManual);
-      setForm((f) => ({ ...f, calories: value }));
-      return;
-    }
-
-    setForm((f) => ({ ...f, [name]: value }));
-  };
-
-  const onSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (!valid || saving) return;
-
-    setSaving(true);
-    setBanner(null);
-
+    setError("");
     try {
-      const payload = {
-        type: form.type.trim(),
-        duration: +form.duration,
-        intensity: form.intensity,
-        // distance optional
-        ...(form.distance ? { distance: +form.distance } : {}),
-        // canonical field name "calories" numeric
-        calories: form.calories ? +form.calories : 0,
-        date: form.date,
-      };
-
-      console.log("POST /api/workouts payload:", payload);
-      const res = await API.post("/workouts", payload);
-      console.log("POST response:", res?.data);
-
-      setForm(initialForm());
-      setManualCalories(false);
-      await fetchWorkouts();
-      setBanner({ type: "ok", msg: "Workout added." });
+      await register(name, email, password);
+      nav("/dashboard");
     } catch (err) {
-      console.error("onSubmit error:", err);
-      setBanner({ type: "err", msg: err?.response?.data?.message || "Failed to add workout." });
-    } finally {
-      setSaving(false);
+      setError(err.response?.data?.message || "Registration failed");
     }
   };
-
-  const onDelete = async (id) => {
-    if (!id) return;
-    if (!confirm("Delete this workout?")) return;
-    try {
-      await API.delete(`/workouts/${id}`);
-      setWorkouts((list) => list.filter((w) => w._id !== id));
-      setBanner({ type: "ok", msg: "Workout deleted." });
-    } catch (err) {
-      console.error("delete error:", err);
-      setBanner({ type: "err", msg: err?.response?.data?.message || "Failed to delete workout." });
-    }
-  };
-
-  // read calories from response tolerantly
-  const getCaloriesFrom = (w) => Number(w.calories ?? w.caloriesBurned ?? 0);
-
-  const totalCalories = workouts.reduce((s, w) => s + getCaloriesFrom(w), 0);
-  const totalMinutes = workouts.reduce((s, w) => s + Number(w.duration || 0), 0);
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Workouts</h1>
-
-      {banner && (
-        <div
-          className={`p-2 rounded ${
-            banner.type === "ok" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}
-        >
-          {banner.msg}
+    <section className="bg-gradient-to-bl from-violet-800 to-pink-500 min-h-screen flex items-center justify-center">
+      {/* Card */}
+      <div className="flex flex-col lg:flex-row w-9/10 md:w-4/5 lg:w-2/3 min-h-[650px] bg-white rounded-3xl shadow-2xl overflow-hidden">
+        {/* Left: Image */}
+        <div className="lg:w-1/2 h-96 lg:h-auto">
+          <img
+            src={registerImg}
+            alt="Register Illustration"
+            className="w-full h-full object-cover"
+          />
         </div>
-      )}
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-green-100 p-3 rounded-lg text-center">
-          <p className="text-lg font-bold">{totalMinutes} min</p>
-          <p className="text-sm text-gray-700">Total Duration</p>
-        </div>
-        <div className="bg-yellow-100 p-3 rounded-lg text-center">
-          <p className="text-lg font-bold">{totalCalories} kcal</p>
-          <p className="text-sm text-gray-700">Calories Burned</p>
-        </div>
-      </div>
+        {/* Right: Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-10">
+          <div className="w-full max-w-md">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              Create Account
+            </h2>
 
-      {/* Form */}
-      <form onSubmit={onSubmit} className="grid md:grid-cols-5 gap-3 bg-white p-4 rounded-xl shadow">
-        <input
-          list="workoutOptions"
-          name="type"
-          value={form.type}
-          onChange={handleChange}
-          placeholder="Select or type a workout"
-          className="border rounded p-2 md:col-span-2"
-          required
-        />
-        <datalist id="workoutOptions">
-          {WORKOUT_OPTIONS.map((o) => (
-            <option key={o} value={o} />
-          ))}
-        </datalist>
-
-        <input
-          name="duration"
-          placeholder="Duration (min)"
-          value={form.duration}
-          onChange={handleChange}
-          className="border rounded p-2"
-          inputMode="numeric"
-          required
-        />
-
-        <input
-          name="distance"
-          placeholder="Distance (km) (optional)"
-          value={form.distance}
-          onChange={handleChange}
-          className="border rounded p-2"
-          inputMode="decimal"
-        />
-
-        <select
-          name="intensity"
-          value={form.intensity}
-          onChange={handleChange}
-          className="border rounded p-2"
-        >
-          <option>Low</option>
-          <option>Medium</option>
-          <option>High</option>
-        </select>
-
-        <input
-          name="calories"
-          placeholder="Calories (auto)"
-          value={form.calories}
-          onChange={handleChange}
-          className={`border rounded p-2 ${manualCalories ? "bg-white" : "bg-gray-50"}`}
-          inputMode="numeric"
-          title={manualCalories ? "Manual calories (you edited this field)" : "Auto estimated calories"}
-        />
-
-        <input
-          type="date"
-          name="date"
-          value={form.date}
-          onChange={handleChange}
-          className="border rounded p-2 md:col-span-2"
-        />
-
-        <button
-          disabled={!valid || saving}
-          className="md:col-span-5 bg-indigo-600 text-white rounded p-2 hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Add Workout"}
-        </button>
-      </form>
-
-      {/* List */}
-      <div className="space-y-2">
-        {workouts.map((w) => (
-          <div key={w._id} className="bg-white p-3 rounded-xl shadow flex justify-between items-center">
-            <div>
-              <div className="font-semibold">
-                {w.type} — {w.duration} min
+            {error && (
+              <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">
+                {error}
               </div>
-              <div className="text-sm text-gray-600">
-                {w.distance ? `${w.distance} km • ` : ""}
-                {getCaloriesFrom(w)} kcal
+            )}
+
+            <form onSubmit={submit} className="space-y-5">
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition"
+                required
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition"
+                required
+              />
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-5 py-3 border border-gray-200 rounded-xl focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition pr-16"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
               </div>
-              <div className="text-xs text-gray-400">
-                {w.date || w.createdAt ? new Date(w.date || w.createdAt).toLocaleString() : ""}
-              </div>
-            </div>
-            <button onClick={() => onDelete(w._id)} className="text-red-600 text-sm hover:underline">
-              Delete
-            </button>
+
+              <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500 text-white py-3 rounded-xl shadow-lg transition-all duration-300 font-semibold">
+                Register
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-gray-500 text-sm">
+              Already have an account?{" "}
+              <Link
+                className="text-purple-600 font-medium hover:underline"
+                to="/login"
+              >
+                Login
+              </Link>
+            </p>
           </div>
-        ))}
-
-        {workouts.length === 0 && <div className="text-sm text-gray-500">No workouts yet.</div>}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

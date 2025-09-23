@@ -48,7 +48,6 @@ function parseLogDate(log) {
   const raw = log?.date ?? log?.createdAt;
   return raw ? new Date(raw) : null;
 }
-
 export default function History() {
   const [workouts, setWorkouts] = useState([]);
   const [foods, setFoods] = useState([]);
@@ -56,22 +55,10 @@ export default function History() {
   const [mental, setMental] = useState([]);
   const [generalStatus, setGeneralStatus] = useState("Average");
   const [focusAreas, setFocusAreas] = useState([]);
-  const [evaluated, setEvaluated] = useState({
-    workouts: [],
-    foods: [],
-    goals: [],
-    mental: [],
-  });
-  const [sectionInsights, setSectionInsights] = useState({
-    workouts: [],
-    foods: [],
-    goals: [],
-    mental: [],
-  });
+  const [evaluated, setEvaluated] = useState({ workouts: [], foods: [], goals: [], mental: [] });
+  const [sectionInsights, setSectionInsights] = useState({ workouts: [], foods: [], goals: [], mental: [] });
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     try {
@@ -86,7 +73,6 @@ export default function History() {
       console.error("History.fetchAll error:", err);
     }
   };
-
   
   const analyzeData = (w, f, g, m) => {
     setWorkouts(w);
@@ -218,7 +204,7 @@ export default function History() {
         // Ensure progress is numeric (if null -> cannot evaluate)
         const p = typeof progress === "number" ? progress : 0;
         completed = p >= target;
-        note = completed ? "Goal achieved 🎉" : `Progress: ${p}/${target} ${metric || ""}`;
+        note = completed ? "Goal achieved " : `Progress: ${p}/${target} ${metric || ""}`;
       }
 
       // build friendly timeframe label
@@ -288,10 +274,9 @@ export default function History() {
   };
 
   // Chart Data (weekly)
-  const labels = lastNDates(7);
+ const labels = lastNDates(7);
   const minutesPerDay = labels.map((d) =>
-    workouts
-      .filter((w) => new Date(w.date || w.createdAt).toISOString().slice(0, 10) === d)
+    workouts.filter((w) => new Date(w.date || w.createdAt).toISOString().slice(0, 10) === d)
       .reduce((s, x) => s + toNumberSafe(x.duration), 0)
   );
   const protein = foods.reduce((s, f) => s + toNumberSafe(f.protein), 0);
@@ -300,6 +285,38 @@ export default function History() {
   const moodCounts = ["Happy", "Neutral", "Sad", "Stressed", "Anxious"].map((mood) =>
     mental.filter((x) => (x.mood || "").toLowerCase() === mood.toLowerCase()).length
   );
+
+  const SectionLayout = ({ title, metric, chart, logs, insights, logRender, hideChart }) => (
+  <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row gap-4">
+    {/* Left: metric + chart (only show if hideChart is false) */}
+    {!hideChart && (
+      <div className="md:w-1/2 space-y-4">
+        <h3 className="font-semibold text-indigo-600 mb-2">{title}</h3>
+        {metric && <div>{metric}</div>}
+        {chart && <div className="bg-gray-50 p-2 rounded max-h-60">{chart}</div>}
+      </div>
+    )}
+
+    {/* Right: logs */}
+    <div className={`${hideChart ? "md:w-full" : "md:w-1/2"} space-y-2 max-h-[400px] overflow-y-auto`}>
+      <h3 className={`font-semibold text-indigo-600 mb-2 ${hideChart ? "" : "md:hidden"}`}>{hideChart ? title : null}</h3>
+
+      {insights && insights.length > 0 && (
+        <ul className="list-disc pl-5 text-sm text-gray-600 mb-2">
+          {insights.map((ins, i) => <li key={i}>{ins}</li>)}
+        </ul>
+      )}
+
+      {logs && logs.length > 0
+        ? logs.map(logRender)
+        : <div className="text-sm text-gray-400">No logs available.</div>
+      }
+    </div>
+  </div>
+);
+
+
+  const logCardStyle = "bg-gray-50 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-150";
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-6">
@@ -315,121 +332,87 @@ export default function History() {
       >
         Overall Health Status: {generalStatus}
         {focusAreas.length > 0 && (
-          <p className="text-sm mt-1 font-normal">⚠️ Focus more on: {focusAreas.join(", ")}.</p>
+          <p className="text-sm mt-1 font-normal">!!!Focus more on: {focusAreas.join(", ")}.</p>
         )}
       </div>
 
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard
-          title="Workout Minutes"
-          value={`${workouts.reduce((s, w) => s + toNumberSafe(w.duration), 0)} min`}
-          subtitle="All-time"
-          color="border-green-500"
-        />
-        <MetricCard
-          title="Calories Logged"
-          value={`${foods.reduce((s, f) => s + toNumberSafe(f.calories), 0)} kcal`}
-          subtitle="All meals"
-          color="border-yellow-400"
-        />
-        <MetricCard
-          title="Goals Completed"
-          value={`${evaluated.goals.filter((g) => g.completed).length}/${evaluated.goals.length}`}
-          subtitle="Progress"
-          color="border-indigo-500"
-        />
-      </div>
+      {/* Workout Section */}
+      <SectionLayout
+        title="Workout Logs"
+        metric={<MetricCard title="Workout Minutes" value={`${workouts.reduce((s, w) => s + toNumberSafe(w.duration), 0)} min`} subtitle="All-time" color="border-green-500" />}
+        chart={<WeeklyWorkoutChart labels={labels} data={minutesPerDay} />}
+        logs={evaluated.workouts}
+        insights={sectionInsights.workouts}
+        logRender={(wk, i) => (
+          <div key={i} className={`${logCardStyle} flex justify-between text-sm`}>
+            <span>{wk.type || "Workout"} - {wk.duration ?? 0} mins</span>
+            <span className={`px-2 py-0.5 rounded text-xs ${
+              wk.status === "Healthy" ? "bg-green-100 text-green-700" :
+              wk.status === "Average" ? "bg-yellow-100 text-yellow-700" :
+              "bg-red-100 text-red-700"
+            }`}>{wk.status}</span>
+          </div>
+        )}
+      />
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Workout Trend</h3>
-          <WeeklyWorkoutChart labels={labels} data={minutesPerDay} />
-        </div>
+      {/* Food Section */}
+      <SectionLayout
+        title="Food Logs"
+        metric={<MetricCard title="Calories Logged" value={`${foods.reduce((s, f) => s + toNumberSafe(f.calories), 0)} kcal`} subtitle="All meals" color="border-yellow-400" />}
+        chart={<MacroDoughnut protein={protein} carbs={carbs} fat={fat} />}
+        logs={evaluated.foods}
+        insights={sectionInsights.foods}
+        logRender={(fd, i) => (
+          <div key={i} className={`${logCardStyle} flex justify-between text-sm`}>
+            <span>{fd.name || "Meal"} - {fd.calories ?? 0} kcal</span>
+            <span className={`px-2 py-0.5 rounded text-xs ${
+              fd.status === "Healthy" ? "bg-green-100 text-green-700" :
+              fd.status === "Average" ? "bg-yellow-100 text-yellow-700" :
+              "bg-red-100 text-red-700"
+            }`}>{fd.status}</span>
+          </div>
+        )}
+      />
 
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Macro Balance</h3>
-          <MacroDoughnut protein={protein} carbs={carbs} fat={fat} />
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Mood History</h3>
-          <MoodBar labels={["Happy", "Neutral", "Sad", "Stressed", "Anxious"]} data={moodCounts} />
-        </div>
-      </div>
-
-      {/* Section Details */}
-      <div className="space-y-6">
-        {/* Workouts */}
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Workout Logs</h3>
-          <ul className="list-disc pl-5 text-sm text-gray-600 mb-3">{sectionInsights.workouts.map((c, i) => <li key={i}>{c}</li>)}</ul>
-          {evaluated.workouts.map((wk, i) => (
-            <div key={i} className="flex justify-between text-sm border-b py-1">
-              <span>{wk.type || "Workout"} - {wk.duration ?? 0} mins</span>
-              <span className={`px-2 py-0.5 rounded text-xs ${
-                wk.status === "Healthy" ? "bg-green-100 text-green-700" :
-                wk.status === "Average" ? "bg-yellow-100 text-yellow-700" :
-                "bg-red-100 text-red-700"
-              }`}>{wk.status}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Foods */}
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Food Logs</h3>
-          <ul className="list-disc pl-5 text-sm text-gray-600 mb-3">{sectionInsights.foods.map((c, i) => <li key={i}>{c}</li>)}</ul>
-          {evaluated.foods.map((fd, i) => (
-            <div key={i} className="flex justify-between text-sm border-b py-1">
-              <span>{fd.name || "Meal"} - {fd.calories ?? 0} kcal</span>
-              <span className={`px-2 py-0.5 rounded text-xs ${
-                fd.status === "Healthy" ? "bg-green-100 text-green-700" :
-                fd.status === "Average" ? "bg-yellow-100 text-yellow-700" :
-                "bg-red-100 text-red-700"
-              }`}>{fd.status}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Goals */}
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Goals</h3>
-          <ul className="list-disc pl-5 text-sm text-gray-600 mb-3">{sectionInsights.goals.map((c, i) => <li key={i}>{c}</li>)}</ul>
-
-          {evaluated.goals.map((gl, i) => {
-            const goalName = gl.name || gl.title || `Goal ${i + 1}`;
-            const progressLabel = gl.target !== null ? `${gl.progress ?? 0}/${gl.target}` : "No target";
-            return (
-              <div key={i} className="flex justify-between items-center text-sm border-b py-2">
-                <div>
-                  <div className="font-medium">{goalName} <span className="text-xs text-gray-500">({gl.timeframeLabel})</span></div>
-                  <div className="text-xs text-gray-500 mt-1">{gl.note}</div>
-                </div>
-                <div className="text-right">
-                  <div className={`px-2 py-0.5 rounded text-xs ${gl.completed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                    {gl.completed ? "Completed" : "Pending"}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{progressLabel} {gl.metric ? gl.metric : ""}</div>
-                </div>
+      {/* Goals Section */}
+      <SectionLayout
+        title="Goals"
+        logs={evaluated.goals}
+        insights={sectionInsights.goals}
+        hideChart={true}
+        logRender={(gl, i) => {
+          const goalName = gl.name || gl.title || `Goal ${i + 1}`;
+          const progressLabel = gl.target !== null ? `${gl.progress ?? 0}/${gl.target}` : "";
+          return (
+            <div key={i} className={`${logCardStyle} flex justify-between items-center text-sm `}>
+              <div>
+                <div className="font-medium">{goalName} <span className="text-xs text-gray-500">({gl.timeframeLabel})</span></div>
+                <div className="text-xs text-gray-500 mt-1">{gl.note}</div>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Mental Health */}
-        <div className="bg-white p-4 rounded-xl shadow">
-          <h3 className="font-semibold text-indigo-600 mb-2">Mental Health Logs</h3>
-          <ul className="list-disc pl-5 text-sm text-gray-600 mb-3">{sectionInsights.mental.map((c, i) => <li key={i}>{c}</li>)}</ul>
-          {evaluated.mental.map((ml, i) => (
-            <div key={i} className="flex justify-between text-sm border-b py-1">
-              <span>{ml.mood}</span>
-              <span className={`px-2 py-0.5 rounded text-xs ${ml.status === "Positive" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{ml.status}</span>
+              <div className="text-right">
+                <div className={`px-2 py-0.5 rounded text-xs ${gl.completed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  {gl.completed ? "Completed" : "Pending"}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">{progressLabel} {gl.metric || ""}</div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          );
+        }}
+      />
+
+      {/* Mental Health Section */}
+      <SectionLayout
+        title="Mental Health Logs"
+        chart={<MoodBar labels={["Happy", "Neutral", "Sad", "Stressed", "Anxious"]} data={moodCounts} />}
+        logs={evaluated.mental}
+        insights={sectionInsights.mental}
+        logRender={(ml, i) => (
+          <div key={i} className={`${logCardStyle} flex justify-between text-sm`}>
+            <span>{ml.mood || "N/A"}</span>
+            <span className={`px-2 py-0.5 rounded text-xs ${ml.status === "Positive" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{ml.status}</span>
+          </div>
+        )}
+      />
     </div>
   );
 }

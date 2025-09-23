@@ -19,7 +19,6 @@ const initialForm = () => ({
   distance: "",
   calories: "",
   intensity: "Medium",
-  date: new Date().toISOString().slice(0, 10),
 });
 
 export default function Workouts() {
@@ -132,7 +131,7 @@ export default function Workouts() {
   const totalMinutes = workouts.reduce((s, w) => s + Number(w.duration || 0), 0);
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-3xl mx-auto p-6 space-y-6 " style={{ backgroundImage: "url('./src/assets/bg.png')" }}>
       <h1 className="text-2xl font-bold">Workouts</h1>
 
       {banner && (
@@ -181,6 +180,7 @@ export default function Workouts() {
             <div>
               <div className="font-semibold">{w.type} — {w.duration} min</div>
               <div className="text-sm text-gray-600">{w.distance ? `${w.distance} km • ` : ""}{getCaloriesFrom(w)} kcal</div>
+              
               <div className="text-xs text-gray-400">{w.date || w.createdAt ? new Date(w.date || w.createdAt).toLocaleString() : ""}</div>
             </div>
             <button onClick={() => onDelete(w._id)} className="text-red-600 text-sm hover:underline">Delete</button>

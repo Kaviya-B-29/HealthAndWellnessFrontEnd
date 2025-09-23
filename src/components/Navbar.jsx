@@ -5,7 +5,7 @@ import { Bell } from "lucide-react";
 import API from "../api/axios";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const [reminders, setReminders] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [hasNewReminders, setHasNewReminders] = useState(false);
@@ -16,13 +16,16 @@ export default function Navbar() {
     if (!user) return;
 
     try {
-      const res = await API.get("/reminders");
+      const res = await API.get("/reminders", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       if (res.data) {
         setReminders(res.data.allReminders || []);
-        setHasNewReminders(res.data.hasNew); // backend must send { hasNew: true/false }
+        setHasNewReminders(res.data.hasNew || false);
       }
     } catch (err) {
-      console.error("Error fetching reminders:", err);
+      console.error("Error fetching reminders:", err.response?.data || err.message);
     }
   };
 
@@ -48,12 +51,19 @@ export default function Navbar() {
   const handleDropdownToggle = async () => {
     setDropdownOpen((prev) => !prev);
 
-    if (hasNewReminders) {
+    if (hasNewReminders && reminders.length > 0) {
       try {
-        await API.post("/reminders/viewed");
+        await API.post(
+          "/reminders/viewed",
+          { reminders }, // send current reminders so backend can mark them as viewed
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setHasNewReminders(false);
       } catch (err) {
-        console.error("Error marking reminders as viewed:", err);
+        console.error(
+          "Error marking reminders as viewed:",
+          err.response?.data || err.message
+        );
       }
     }
   };
