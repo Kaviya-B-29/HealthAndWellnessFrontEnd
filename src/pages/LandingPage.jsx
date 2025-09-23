@@ -7,7 +7,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section
         className="relative bg-no-repeat min-h-[600px] text-white"
-        style={{ backgroundImage: "url('./src/assets/hero2.jpg')" }}
+        style={{ backgroundImage: "url('/assets/hero2.jpg')" }}
       >
         {/* Overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
@@ -42,17 +42,17 @@ export default function LandingPage() {
       <section className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-3 gap-10">
         {[
           {
-            src: "./src/assets/workout.avif",
+            src: "/assets/workout.avif",
             title: "Workout Tracking",
             desc: "Log your exercises, track your performance, and stay motivated with weekly and monthly progress charts.",
           },
           {
-            src: "./src/assets/nutrition.jpg",
+            src: "assets/nutrition.jpg",
             title: "Nutrition Logging",
             desc: "Monitor your meals and calorie intake. Understand your macro balance to build healthier eating habits.",
           },
           {
-            src: "./src/assets/mentalhealth.jpg",
+            src: "assets/mentalhealth.jpg",
             title: "Mental Health",
             desc: "Track your moods, reflect daily, and receive gentle reminders to keep your mental wellness in balance.",
           },
