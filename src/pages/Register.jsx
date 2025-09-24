@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import registerImg from "../assets/register.png"; 
 
 export default function Register() {
   const { register } = useAuth();
@@ -24,13 +23,13 @@ export default function Register() {
   };
 
   return (
-    <section className="bg-gradient-to-bl from-violet-800 to-pink-500 min-h-screen flex items-center justify-center">
+    <section className="bg-gradient-to-bl from-violet-800 to-pink-200 min-h-screen flex items-center justify-center">
       {/* Card */}
       <div className="flex flex-col lg:flex-row w-9/10 md:w-4/5 lg:w-2/3 min-h-[650px] bg-white rounded-3xl shadow-2xl overflow-hidden">
         {/* Left: Image */}
         <div className="lg:w-1/2 h-96 lg:h-auto">
           <img
-            src={registerImg}
+            src="/assets/register.png"
             alt="Register Illustration"
             className="w-full h-full bg-no-repeat bg-contain object-cover"
           />

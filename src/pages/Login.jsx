@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import loginImg from "../assets/login1.png";
 
 export default function Login() {
   const { login } = useAuth();
@@ -29,7 +28,7 @@ export default function Login() {
         {/* Left: Image */}
         <div className="lg:w-1/2 h-96 lg:h-auto">
           <img
-            src={loginImg}
+            src="/assets/login1.png"
             alt="Login Illustration"
             className="w-full h-full object-cover"
           />
