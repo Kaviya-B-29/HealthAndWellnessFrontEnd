@@ -71,9 +71,9 @@ export default function MentalHealth() {
   return (
     <div
   className="min-h-screen bg-cover bg-center"
-  style={{ backgroundImage: "url('/assets/bg.png')" }}
+ 
 >
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
+    <div className="max-w-3xl mx-auto p-6 space-y-4"  style={{ backgroundImage: "url('/assets/bg.png')" }}>
       <h1 className="text-2xl font-bold">Mental Health</h1>
 
       {banner && (
