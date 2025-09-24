@@ -51,7 +51,6 @@ const Profile = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Some APIs wrap in {user: {...}}
       const updatedUser = res.data.user || res.data;
 
       setMessage("Profile updated successfully!");

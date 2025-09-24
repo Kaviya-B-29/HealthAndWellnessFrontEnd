@@ -1,12 +1,10 @@
 import API from "../api/axios";
 
-/// src/services/progressService.js
 function inTimeline(dateStr, timeline) {
   const date = new Date(dateStr);
   const now = new Date();
 
   if (timeline === "Daily") {
-    // Compare only YYYY-MM-DD, ignore time zone differences
     const d1 = date.toISOString().split("T")[0];
     const d2 = now.toISOString().split("T")[0];
     return d1 === d2;

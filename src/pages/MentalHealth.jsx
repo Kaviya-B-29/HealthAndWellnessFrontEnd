@@ -5,7 +5,7 @@ const MOODS = ["Happy", "Neutral", "Sad", "Stressed", "Anxious"];
 
 export default function MentalHealth() {
   const [logs, setLogs] = useState([]);
-  const [form, setForm] = useState({ mood: "", notes: "" }); // notes optional
+  const [form, setForm] = useState({ mood: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState(null);
 

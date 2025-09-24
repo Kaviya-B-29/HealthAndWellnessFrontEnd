@@ -140,7 +140,6 @@ export default function History() {
     // Goals evaluation logic
     
     const evaluatedGoals = g.map((gl) => {
-      // Defensive read
       const goal = { ...gl };
       const timeframe = (gl.timeframe || gl.period || "daily").toString().toLowerCase(); // daily/weekly/monthly
       const metric = (gl.metric || "").toString().toLowerCase(); // minutes/calories/protein/sessions/meals
@@ -192,7 +191,6 @@ export default function History() {
       let completed = false;
       let note = "No target set for this goal.";
       if (target === null) {
-        // No numeric target — if backend has a boolean `completed` field, reflect it; otherwise consider incomplete
         if (typeof gl.completed === "boolean") {
           completed = !!gl.completed;
           note = completed ? "Marked completed." : "Not completed.";
@@ -288,7 +286,7 @@ export default function History() {
 
   const SectionLayout = ({ title, metric, chart, logs, insights, logRender, hideChart }) => (
   <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row gap-4">
-    {/* Left: metric + chart (only show if hideChart is false) */}
+    {/* Left: metric + chart  */}
     {!hideChart && (
       <div className="md:w-1/2 space-y-4">
         <h3 className="font-semibold text-indigo-600 mb-2">{title}</h3>

@@ -196,7 +196,7 @@ export default function Dashboard() {
           color="border-yellow-400"
         />
         <MetricCard
-          title="Active Goals"
+          title="Goals"
           value={goals.length}
           subtitle="Tap Goals to view progress"
           color="border-indigo-500"

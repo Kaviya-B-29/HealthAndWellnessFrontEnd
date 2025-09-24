@@ -1,4 +1,3 @@
-// src/pages/Goals.jsx
 import React, { useEffect, useState } from "react";
 import { getProgress } from "../services/progressService";
 import API from "../api/axios";
@@ -223,7 +222,7 @@ export default function Goals() {
                 <li
                   key={goal._id}
                   className="p-3 border rounded-lg flex flex-col space-y-2"
-                  style={{ backgroundImage: "url('./src/assets/bg.png')"}}
+                  style={{ backgroundImage: "url('/assets/bg.png')"}}
                 >
                   <div className="flex justify-between items-center">
                     <p className="font-medium">

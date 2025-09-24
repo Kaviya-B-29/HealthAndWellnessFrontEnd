@@ -13,6 +13,6 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-console.log("Axios baseURL (hardcoded):", api.defaults.baseURL);
+//console.log("Axios baseURL (hardcoded):", api.defaults.baseURL);
 
 export default api;

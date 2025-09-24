@@ -1,4 +1,3 @@
-// src/pages/Workouts.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../api/axios";
 
