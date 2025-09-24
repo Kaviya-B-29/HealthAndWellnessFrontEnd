@@ -137,7 +137,7 @@ export default function Goals() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6"style={{ backgroundImage: "url('./src/assets/bg.png')"}}>
+    <div className="max-w-2xl mx-auto p-6 space-y-6"style={{ backgroundImage: "url('/assets/bg.png')"}}>
       <h2 className="text-2xl font-bold">My Goals</h2>
 
       {/* Add Goal Form */}
